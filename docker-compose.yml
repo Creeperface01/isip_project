@@ -1,6 +1,21 @@
 version: "3.9"
 
 services:
+  db:
+    image: mariadb:10.5
+    container_name: isip_project_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: Europe/Prague
+    env_file:
+      - ./.env
+    volumes:
+      - project-db-data:/var/lib/mysql
+    networks:
+      - project-network
   web:
     container_name: isip_project_web
     build: .
@@ -10,7 +25,36 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_HOST=${DATABASE_HOST}
-      - DB_NAME=${DATABASE_NAME}
-      - DB_USER=${DATABASE_USER}
-      - DB_PASSWORD=${DATABASE_PASSWORD}
+      - DB_HOST=db
+      - DB_NAME=${DB_DATABASE}
+      - DB_USER=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    networks:
+      - project-network
+    depends_on:
+      - db
+
+  adminer:
+      restart: always
+      image: adminer
+
+      logging:
+        driver: "json-file"
+        options:
+          max-size: "128M"
+          max-file: "10"
+
+      container_name: isip_adminer
+      ports:
+        - "127.0.0.1:${ADMINER_PORT}:8080"
+      networks:
+        - project-network
+      links:
+        - db
+
+volumes:
+  project-db-data:
+
+networks:
+  project-network:
+    driver: bridge

@@ -1,0 +1,100 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Rental
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Price</th>
+                <th scope="col">Place</th>
+                <th scope="col">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in allitems %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.price }}</td>
+                    <td>{{ item.place }}</td>
+                    <td> {% if item.rented %}
+                        <button class="btn btn-dark disabled">Rented</button>
+                    {% else %}
+                        <button class="btn btn-primary rent" value="{{ item.id }}">Rent</button>
+                    {% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Rent Item</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Date: <input type="date" id="datepicker"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary rent-item">Rent item</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+{% block scripts %}
+    {{ block.super }}
+    <script>
+        $(document).ready(() => {
+
+            let id_item = 0;
+
+            $(".rent").click(function () {
+                id_item = $(".rent").val();
+                $("#exampleModal").modal('show');
+            });
+
+            let today = new Date();
+            let dd = today.getDate();
+            let mm = today.getMonth() + 1; //January is 0 so need to add 1 to make it 1!
+            let yyyy = today.getFullYear();
+            if (dd < 10) {
+                dd = '0' + dd
+            }
+            if (mm < 10) {
+                mm = '0' + mm
+            }
+
+            today = yyyy + '-' + mm + '-' + dd;
+            document.getElementById("datepicker").setAttribute("min", today);
+
+            $('.rent-item').on('click', function (e) {
+                let item_id = id_item;
+                let rent_date = $('#datepicker').val();
+                let csrfToken = $('[name="csrfmiddlewaretoken"]').val();
+                let param = {
+                    'id_item': item_id,
+                    'rent_date': rent_date,
+                };
+                console.log(param);
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url 'rental_item' %}',
+                    data: JSON.stringify(param),
+                    success: function (response) {
+                        location.reload();
+                    },
+                });
+            });
+
+        })
+    </script>
+{% endblock %}
